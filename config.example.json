@@ -1,0 +1,32 @@
+{
+  "slack_channel": "your-team-channel-name",
+  "standup_bot_name": "Team Standup",
+  "user_name": "Your Name",
+  "user_id": "U0XXXXXXXXX",
+  "tickets": {
+    "development": {
+      "id": "#00000",
+      "name": "[PROJ-0000] - Your Development Ticket",
+      "default_hours": 6.5,
+      "description": "standup"
+    },
+    "daily": {
+      "id": "#00000",
+      "name": "[PROJ-0000] - Daily / Project Management",
+      "default_hours": 1.0,
+      "description": "Dailies"
+    }
+  },
+  "special_fridays": {
+    "dates": [],
+    "adjustments": {
+      "development": 4.0,
+      "education": {
+        "id": "#00000",
+        "name": "[INTERNAL-9] - Education",
+        "hours": 2.5,
+        "description": "AI Initiatives"
+      }
+    }
+  }
+}
