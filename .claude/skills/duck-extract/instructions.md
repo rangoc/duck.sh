@@ -48,7 +48,8 @@ When no `config.json` exists, walk the user through setup:
    │            How to set up:                                  │
    │            1. Type /mcp in Claude Code                     │
    │            2. Add the Slack MCP server                     │
-   │            3. Follow: modelcontextprotocol.io/integrations/slack │
+   │            3. Follow: docs.slack.dev/ai/slack-mcp-server/       │
+   │               connect-to-claude/#connect-to-claude-code-via-plugin │
    │                                                           │
    │  [MISSING] Chrome MCP (Claude in Chrome)                  │
    │            Required for /duck-log (hour logging)           │

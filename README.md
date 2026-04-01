@@ -44,8 +44,8 @@ Reads `standups.json` and your ticket config, then automates Chrome to fill in t
 ## Prerequisites
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (CLI, desktop app, or IDE extension)
-- **Slack MCP** — connected to your workspace ([setup guide](https://modelcontextprotocol.io/integrations/slack))
-- **Chrome MCP** (Claude in Chrome) — for browser automation ([install](https://claude.ai/chrome))
+- **Slack MCP** — connected to your workspace (<a href="https://docs.slack.dev/ai/slack-mcp-server/connect-to-claude/#connect-to-claude-code-via-plugin" target="_blank">setup guide</a>)
+- **Chrome MCP** (Claude in Chrome) — for browser automation (<a href="https://claude.ai/chrome" target="_blank">install</a>)
 - Logged into duck.dlabs.si in Chrome
 
 ## Setup
