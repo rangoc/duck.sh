@@ -216,6 +216,8 @@ For each day D that has a reply:
 
    **Exception — last working day of the month**: Always set `provisional: false`, even if there's no D+1. Reason: next month's run overwrites standups.json, so we'll never get confirmation. Treat the day's own "today" as final.
 
+   **Exception — last working day before vacation/holiday block**: Always set `provisional: false`. If every day between D and N is a vacation day (from `vacation_confirmed` list) or a public holiday, N's "yesterday" will describe the vacation ("Vacation", "Holiday", etc.) — not D's work. The user will never confirm D after the fact, so treat D's own "today" as final rather than blocking it as provisional. This applies when D is the last standup before a stretch of vacation/holiday days, regardless of how long the stretch is.
+
    Note: weekends are not gaps — Friday → Monday is consecutive for this purpose.
 
 2. Clean up the accomplished text:
