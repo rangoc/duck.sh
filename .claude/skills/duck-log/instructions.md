@@ -134,6 +134,13 @@ For each entry's `comment`:
 - `description: "standup"` → use `day.accomplished` from `standups.json`
 - otherwise → use the `description` string verbatim (e.g. `"Dailies"`, `"Education"`)
 
+**Why this split?** The standard/special-Friday hours are calibrated so the monthly totals follow this rule:
+
+- BoF (dev + daily tickets): `working_days × 7h`
+- D·Labs (education / AI ticket): `working_days × 0.5h`
+
+Per typical 5-day week: 4 standard days (4 × 7.5 = 30h BoF) + 1 special Friday (5h BoF + 2.5h D·Labs) = 35h BoF + 2.5h D·Labs, which matches `5 × 7` and `5 × 0.5`. The formula only holds exactly when every working Friday is a special Friday; if vacation lands on a non-Friday, the weekly cadence breaks and the monthly total drifts by ~0.5h. That's expected — don't try to "correct" it by tweaking individual day splits.
+
 ### 4d. Batch submission template
 
 Execute inside `mcp__claude-in-chrome__javascript_tool`. Define a helper once, then fire entries in parallel via `Promise.all`:

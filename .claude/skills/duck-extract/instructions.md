@@ -126,18 +126,37 @@ When no `config.json` exists, walk the user through setup:
 
 The `tickets` object is flexible — keys are whatever roles the user described (development, daily, education, etc.). Each ticket's `description` field indicates what text to use when logging: `"standup"` means use the accomplished text from standups.json, any other string is used as-is (e.g., `"Dailies"`).
 
-## Step 1: Check Vacation Days
+## Step 1: Refresh Month-Specific Settings
 
-Read `data/standups.json` if it exists. Check for the `vacation_confirmed` field for the current month.
+Two pieces of config are month-specific and must be refreshed at the start of each new month:
+- **Vacation days** — stored in `data/standups.json` (`vacation_days` + `vacation_confirmed`).
+- **Special Fridays** — stored in `config.json` under `special_fridays.dates`.
 
-- If `vacation_confirmed` is `true` for this month: use the stored `vacation_days` list. Do NOT ask the user again.
-- If `vacation_confirmed` is `false` or missing: ask the user:
+The rest of `config.json` (channel, user, tickets, hour adjustments) is durable across months.
 
-  > "Any vacation or holiday days this month to skip? You can list day numbers like '9, 15, 23' or just say 'none'."
+### 1a. Detect month change
 
-  **Wait for answer** before proceeding to extraction. Accept flexible input — day numbers (9, 15), ordinals (9th, 15th), or full dates. Convert to `YYYY-MM-DD` format using the current month.
+The month has rolled over if either:
+- `data/standups.json` doesn't exist, OR
+- its `month` field doesn't match the current `YYYY-MM`.
 
-  Store their answer in the output JSON under `vacation_days` and set `vacation_confirmed: true`.
+If neither is true AND `vacation_confirmed: true`, skip both prompts below — existing values are still valid for this month.
+
+### 1b. Vacation days
+
+If the month rolled over OR `vacation_confirmed` is `false`/missing, ask:
+
+> "Any vacation or holiday days this month to skip? You can list day numbers like '9, 15, 23' or just say 'none'."
+
+**Wait for answer** before proceeding. Accept flexible input — day numbers (9, 15), ordinals (9th, 15th), or full dates. Convert to `YYYY-MM-DD` format using the current month. Store in `vacation_days` and set `vacation_confirmed: true` in the output JSON.
+
+### 1c. Special Fridays
+
+If the month rolled over (i.e., the dates in `config.json`'s `special_fridays.dates` are from a different month, or the array is from a stale month), ask:
+
+> "Are there any Fridays this month where your hours split differently? (e.g., education days, team events) Day numbers like '6, 13, 20' or 'none'."
+
+**Wait for answer.** Accept day numbers, ordinals, or full dates and convert to `YYYY-MM-DD` using the current month. If the user says "none", set `dates` to `[]`. Write the updated `special_fridays.dates` back to `config.json` — leave `special_fridays.adjustments` and every other field in `config.json` untouched.
 
 ## Step 2: Find the Channel
 
@@ -147,21 +166,28 @@ Extract the `channel_id` from the result. If not found, warn the user and stop.
 
 ## Step 3: Fetch Standup Bot Messages
 
-Calculate the date range:
-- `month_start`: first day of the current month at 00:00:00 UTC
-- `now`: current timestamp
+Determine `oldest_date` (incremental optimization — avoids re-fetching the whole month on every run):
 
-Convert both to Unix timestamps (seconds since epoch).
+- If `data/standups.json` exists AND its `month` matches the current month AND it has a non-empty `days` array:
+  - Let `provisional_dates` = dates of all days where `provisional: true`.
+  - If `provisional_dates` is non-empty: `oldest_date` = earliest provisional date. (We need to re-resolve these once their next-day reply arrives.)
+  - Otherwise: `oldest_date` = the day after the latest date in `days[]`. (No provisional days to confirm — only fetch new days.)
+  - If `oldest_date` is in the future (i.e., everything is already extracted and confirmed): skip Steps 3–6 and go straight to Step 7 with the existing data unchanged. Report "nothing new to extract" in Step 9.
+- Otherwise (first run, or `month` mismatch): `oldest_date` = first day of the current month.
+
+Calculate timestamps:
+- `oldest`: `oldest_date` at 00:00:00 in the user's local timezone, as Unix seconds. (Local-midnight is safer than UTC-midnight — it guarantees we catch the bot message posted at ~08:00 local time.)
+- `latest`: current timestamp.
 
 Call `mcp__claude_ai_Slack__slack_read_channel` with:
 - `channel_id`: from Step 2
-- `oldest`: month_start Unix timestamp
+- `oldest`: Unix timestamp from above
 - `latest`: now Unix timestamp
 - `limit`: 100
 
 From the results, filter for messages posted by the standup bot. Identify these by checking the message sender's name or bot label matching the configured `standup_bot_name` (e.g., "Team Standup"). These are the parent messages.
 
-If there are more than 100 messages in the channel for the month, paginate using the `cursor` field until all messages are retrieved.
+If there are more than 100 messages in the channel for the window, paginate using the `cursor` field until all messages are retrieved.
 
 Collect each standup bot message's `ts` (timestamp) — these are needed to read the threads.
 
@@ -235,6 +261,12 @@ Skip these days entirely (do not include in the `days` array):
 
 For missing **weekdays** (Monday–Friday) that are NOT vacation: add to the `warnings` array: `"<date>: No standup reply found"`. Do NOT generate warnings for Saturdays or Sundays — those are expected to have no standups.
 
+**Merge with existing data (incremental runs)**: If Step 3 used an `oldest_date` past the start of the month (i.e., this is an incremental run), merge as follows:
+- Start from the existing `days[]` array.
+- For each newly-extracted day record, replace the existing record for the same date if present, otherwise append.
+- Recompute `warnings` from scratch over the full month — do not preserve stale warnings from the previous run.
+- Re-sort `days[]` by date ascending after merging.
+
 Build the output JSON:
 
 ```json
@@ -265,7 +297,7 @@ Sort the `days` array by date ascending.
 
 Create the `data/` directory if it doesn't exist.
 
-Write the JSON to `data/standups.json` with 2-space indentation. Re-running the skill overwrites this file — only the current month matters.
+Write the JSON to `data/standups.json` with 2-space indentation. Re-running the skill overwrites this file — only the current month matters. Incremental runs preserve already-confirmed days from the previous run (see merge logic in Step 7); a new month's run replaces the file entirely.
 
 ## Step 9: Report
 
