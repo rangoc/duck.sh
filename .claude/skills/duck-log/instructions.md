@@ -42,7 +42,7 @@ Follow these steps exactly when `/duck-log` is invoked.
    └──────────────────────────────────────────────────────────┘
    ```
 
-   Do not proceed if Chrome MCP is missing. If `config.json` or `data/standups.json` is missing, show `[MISSING]` for it and tell the user to run `/duck-extract` first.
+   Do not proceed if Chrome MCP is missing. If `config.json` or `data/standups.json` is missing, show `[MISSING]` for it and tell the user to run `/duck-extract` first (or `/duck-fill` if they don't want to pull from Slack).
 
 2. Read `config.json` from the project root.
 3. Read `data/standups.json`.

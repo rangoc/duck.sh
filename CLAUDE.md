@@ -5,11 +5,13 @@ Automation tool for extracting daily standup data from Slack and logging hours o
 ## Workflow
 
 1. Run `/duck-extract` — pulls your Slack standup replies for the current month into `data/standups.json`
+   (or `/duck-fill` — same artifact, no Slack, every working day gets `"Work"`)
 2. Run `/duck-log` — reads `standups.json`, opens duck.dlabs.si in Chrome, and logs hours for each day that isn't already logged
 
 ## Project Structure
 
 - `.claude/skills/duck-extract/` — Slack standup extraction skill
+- `.claude/skills/duck-fill/` — Slack-free generator for the same `standups.json` artifact
 - `.claude/skills/duck-log/` — duck.dlabs.si browser automation skill
 - `data/standups.json` — extracted standup data (current month, overwritten each run)
 - `config.json` — user-specific configuration (not committed)
@@ -26,6 +28,13 @@ Extracts your standup replies from Slack for the current month. Uses Slack MCP t
 - Skips vacation/holiday days (auto-detected or user-declared)
 - Warns about missing days
 - On first run, walks you through interactive setup to create `config.json`
+
+### `/duck-fill`
+
+Generates `data/standups.json` for the current month without touching Slack. Every Mon–Fri up to and including today gets `accomplished: "Work"` and `provisional: false`. Skips weekends and vacation days, still handles the month-specific prompts (vacation days, special Fridays), and preserves any real extracted entries already in the file. Output is drop-in compatible with `/duck-log`.
+
+- Adds `"source": "fill"` to the output so a generated file is distinguishable from an extracted one
+- Requires no MCP servers; on first run does a short setup (name + tickets + special Fridays) with the Slack fields left empty
 
 ### `/duck-log`
 
